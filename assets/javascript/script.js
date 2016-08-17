@@ -1,7 +1,7 @@
 $(document).ready(function() {
 
 
-// // Initialize Firebase
+// Initialize Firebase
   var config = {
     apiKey: "AIzaSyB21R7l7blRMz5HhxlT69XEkgcvNRHfvmI",
     authDomain: "week-7-project-2254a.firebaseapp.com",
@@ -13,7 +13,7 @@ $(document).ready(function() {
 var database = firebase.database();
 
 
-// Initial Values
+// Declare Initial Values
 var trainName;
 var destination;
 var firstTrain;
@@ -23,56 +23,62 @@ var frequency = 0;
 // Capture Button Click
 $('#addTrain').on('click', function() {
 
-	// alert("train added");
 
+// Collect Input Values from Form
 	trainName = $('#trainInput').val().trim();
 	destination = $('#destinationInput').val().trim();
 	firstTrain = $('#trainTimeInput').val().trim();
 	frequency = $('#frequencyInput').val().trim();
 
-	console.log(trainName);
-	console.log(destination);
-	console.log(firstTrain);
-	console.log(frequency);
 
 
-	// Code for the push
+// Push the Input Values to Firebase
 	database.ref().push({
 		name: trainName,
-		destination: destination,
+		dest: destination,
 		first_train: firstTrain,
-		frequency: frequency,
+		freq: frequency,
 	})
+
+// Clear the Form after Submit	
 	$('input').val('');
+
+// Stop Page from Refreshing	
 	return false;
 });
 
-//Firebase watcher + initial loader HINT: This code behaves similarly to .on("value")
-// dataRef.ref().on("child_added", function(childSnapshot) {
-// 	// Log everything that's coming out of snapshot
-// 	console.log(childSnapshot.val().name);
-// 	console.log(childSnapshot.val().name);
-// 	console.log(childSnapshot.val().email);
-// 	console.log(childSnapshot.val().age);
-// 	console.log(childSnapshot.val().comment);
-// 	console.log(childSnapshot.val().joinDate)
 
-// 	// full list of items to the well
+database.ref().on("child_added", function(childSnapshot, prevChildKey){
+	trainName = childSnapshot.val().name;
+	destination = childSnapshot.val().dest;
+	firstTrain = childSnapshot.val().first_train;
+	frequency = childSnapshot.val().freq;
 
-// 		// $('#full-member-list').append("<div class='well'><span id='name'> "+childSnapshot.val().name+" </span><span id='email'> "+childSnapshot.val().email+" </span><span id='age'> "+childSnapshot.val().age+" </span><span id='comment'> "+childSnapshot.val().comment+" </span></div>")
+// Declares the Current Time
+var currentTime = moment();
 
+// Converts First Train Time to Proper Format
+var firstTrainConverted = moment(firstTrain, "hh:mm").subtract(1, "days");
 
-// // Handle the errors
-// }, function(errorObject){
-// 	//console.log("Errors handled: " + errorObject.code)
-// });
+// Calculates Difference in Minutes Between Current Time and First Train Time
+var timeDifference = currentTime.diff(moment(firstTrainConverted), "minutes");
 
-// dataRef.ref().orderByChild("dateAdded").limitToLast(1).on("child_added", function(snapshot){
-// 	// Change the HTML to reflect
-// 	$("#namedisplay").html(snapshot.val().name);
-// 	$("#emaildisplay").html(snapshot.val().email);
-// 	$("#agedisplay").html(snapshot.val().age);
-// 	$("#commentdisplay").html(snapshot.val().comment);
-// })
+// Calculates Difference between frequency and Time Difference 
+var remainder = timeDifference % frequency;
+
+// Calculates how Many Minutes Until Next Train
+var minsAway = frequency - remainder;
+
+// Calculates Next Train Time based on Current Time
+var nextTrain = currentTime.add(minsAway, "minutes");
+
+// Formats Next Train Time into Proper Format
+nextTrain = moment(nextTrain).format("hh:mm");
+
+// Appends Train Information to Table
+$('#trainList').append("<tr><td>" + childSnapshot.val().name + "</td><td>" + childSnapshot.val().dest + "</td><td>" + childSnapshot.val().freq + "</td><td>" + nextTrain + "</td><td>" + minsAway + "</td>");
+
+});
+
 
 });
